@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4학년 토론 교실</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- html2canvas for Screenshot Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        
+        /* Smooth Custom Scrollbar */
+        .chat-scroll::-webkit-scrollbar { width: 6px; }
+        .chat-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .chat-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .chat-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Splash Screen Animation */
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800 antialiased p-2 md:p-6">
+
+    <!-- Splash Overlay for Achievements -->
+    <div id="splash-overlay" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden pointer-events-none">
+        <div id="splash-card" class="bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 px-8 py-6 rounded-3xl shadow-2xl border-4 border-white text-center animate-pop">
+            <div id="splash-emoji" class="text-5xl mb-2">⭐</div>
+            <div id="splash-text" class="text-2xl md:text-3xl font-extrabold">멋진 논리에요!</div>
+        </div>
+    </div>
+
+    <!-- Generic Custom Modal -->
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 text-center border border-slate-100 transform transition-all">
+            <div id="modal-icon" class="text-4xl mb-3">💬</div>
+            <h3 id="modal-title" class="text-xl font-bold text-slate-900 mb-2">안내</h3>
+            <div id="modal-body" class="text-slate-600 mb-6 text-sm md:text-base leading-relaxed"></div>
+            <button id="modal-confirm-btn" onclick="closeCustomModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-2xl shadow-lg shadow-indigo-200 transition">
+                알겠습니다
+            </button>
+        </div>
+    </div>
+
+    <!-- Top Fixed Bar -->
+    <div class="max-w-4xl mx-auto flex justify-between items-center mb-4 px-2">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🗣️</span>
+            <span class="font-extrabold text-xl text-indigo-950 tracking-tight">4학년 토론 교실</span>
+        </div>
+        <button onclick="goHome()" class="bg-slate-800 hover:bg-slate-900 text-amber-300 font-bold px-4 py-2 rounded-2xl shadow-md text-xs md:text-sm flex items-center gap-1.5 transition">
+            <span>🏠</span>
+            <span>처음으로 돌아가기</span>
+        </button>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-200/80 overflow-hidden min-h-[750px] flex flex-col">
+
+        <!-- SCREEN 1: LOGIN & REGISTRATION -->
+        <div id="screen-login" class="screen p-6 md:p-10 flex-1 flex flex-col justify-between">
+            <div class="space-y-6">
+                <div class="text-center space-y-2">
+                    <span class="bg-indigo-100 text-indigo-800 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">초등학교 4학년 토론 파트너</span>
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-900">내 정보 등록하기</h1>
+                    <p class="text-slate-500 text-sm">반과 번호, 이름을 입력하고 오늘 토론할 주제를 정해보세요!</p>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">🏫 학교 선택</label>
+                        <select id="schoolName" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-slate-800 font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="">학교를 선택하세요</option>
+                            <option value="인천별빛초등학교">인천별빛초등학교</option>
+                            <option value="인천남부초등학교">인천남부초등학교</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">학년</label>
+                            <input type="number" value="4" disabled class="w-full bg-slate-200 text-slate-500 font-bold border border-slate-300 rounded-xl p-3 text-center">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">반</label>
+                            <input type="number" id="classNum" min="1" placeholder="반" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-center font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">번호</label>
+                            <input type="number" id="studentNum" min="1" placeholder="번호" class="w-full bg-white border border-slate-300 rounded-xl p-3 text-center font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">👤 이름</label>
+                        <input type="text" id="studentName" placeholder="이름을 입력하세요" class="w-full bg-white border border-slate-300 rounded-xl p-3 font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">📌 토론 주제</label>
+                        <input type="text" id="topicInput" placeholder="예: 착한 거짓말은 필요하다." class="w-full bg-white border border-slate-300 rounded-xl p-3 font-bold focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        
+                        <!-- Recommended Topics (2 Topics dynamically selected on each visit) -->
+                        <div class="mt-2 space-y-1">
+                            <span class="text-xs text-slate-400 font-semibold">💡 4학년 추천 토론 주제 (2가지):</span>
+                            <div id="recommended-topics-container" class="flex flex-wrap gap-1.5 pt-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="goToSetup()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-indigo-200 text-lg transition">
+                    토론 설정하러 가기 ➔
+                </button>
+            </div>
+
+            <!-- Hall of Fame Table (First Screen) -->
+            <div id="main-hof" class="mt-8 border-t border-slate-200 pt-6"></div>
+        </div>
+
+        <!-- SCREEN 2: SETUP STANCE & ROLE -->
+        <div id="screen-setup" class="screen hidden p-6 md:p-10 flex-1 flex flex-col justify-between">
+            <div class="space-y-6">
+                <div class="text-center space-y-1">
+                    <h2 class="text-2xl md:text-3xl font-black text-slate-900">나의 토론 역할 설정</h2>
+                    <p id="prev-setting-info" class="text-xs text-indigo-600 font-bold min-h-[18px]"></p>
+                </div>
+
+                <!-- Stance Selection -->
+                <div class="space-y-2">
+                    <label class="block text-sm font-extrabold text-slate-700">1. 토론 입장을 선택하세요</label>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button id="btn-pro" onclick="selectStance('찬성')" class="stance-btn border-4 border-transparent bg-blue-50 text-blue-900 hover:bg-blue-100 font-extrabold p-5 rounded-2xl text-center text-lg shadow-sm transition">
+                            찬성
+                        </button>
+                        <button id="btn-con" onclick="selectStance('반대')" class="stance-btn border-4 border-transparent bg-rose-50 text-rose-900 hover:bg-rose-100 font-extrabold p-5 rounded-2xl text-center text-lg shadow-sm transition">
+                            반대
+                        </button>
+                        <button id="btn-judge" onclick="selectStance('판정단')" class="stance-btn border-4 border-transparent bg-emerald-50 text-emerald-900 hover:bg-emerald-100 font-extrabold p-5 rounded-2xl text-center text-lg shadow-sm transition">
+                            판정단
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Role Selection -->
+                <div id="role-section" class="space-y-2 transition-all duration-300">
+                    <label class="block text-sm font-extrabold text-slate-700">2. AI 토론 파트너의 역할을 선택하세요</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="btn-assistant" onclick="selectRole('토론 보조자')" class="role-btn border-4 border-transparent bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold p-4 rounded-2xl text-center transition">
+                            🤝 토론 보조자<br><span class="text-xs font-normal text-slate-500">함께 근거를 만드는 도우미</span>
+                        </button>
+                        <button id="btn-opponent" onclick="selectRole('토론 상대방')" class="role-btn border-4 border-transparent bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold p-4 rounded-2xl text-center transition">
+                            ⚔️ 토론 상대방<br><span class="text-xs font-normal text-slate-500">반대 입장에서 주장을 펼치는 상대</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startDebate()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-indigo-200 text-lg transition mt-6">
+                🎙️ 토론 시작하기
+            </button>
+        </div>
+
+        <!-- SCREEN 3: DEBATE CHAT ROOM -->
+        <div id="screen-chat" class="screen hidden flex-1 flex flex-col justify-between overflow-hidden">
+            
+            <!-- Top Topic Bar -->
+            <div class="bg-indigo-950 text-white p-4 border-b border-indigo-900 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center space-x-2 min-w-0 flex-1">
+                    <span class="bg-amber-400 text-indigo-950 text-xs font-black px-2.5 py-1 rounded-lg shrink-0">📌 토론 주제</span>
+                    <h3 id="chat-topic-display" class="font-bold text-sm md:text-base leading-snug break-words"></h3>
+                </div>
+                <div class="flex items-center space-x-2 shrink-0">
+                    <span id="badge-my-stance" class="text-xs font-extrabold px-3 py-1 rounded-full bg-blue-500 text-white shadow-sm"></span>
+                    <span id="badge-ai-role" class="text-xs font-extrabold px-3 py-1 rounded-full bg-slate-700 text-slate-200 border border-slate-600"></span>
+                </div>
+            </div>
+
+            <!-- Status Bar (Score, Timer, Moderator Re-explanation Request) -->
+            <div class="bg-slate-800 text-slate-200 px-4 py-2.5 flex justify-between items-center text-xs md:text-sm font-bold border-b border-slate-700">
+                <div id="score-display" class="text-amber-300 font-extrabold text-sm md:text-base">점수 집계 중...</div>
+                <div id="timer-display" class="text-rose-400 font-mono">예시 논리 등장까지: 300초</div>
+                <button onclick="openLevelChangeMenu()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded-xl shadow transition text-xs flex items-center gap-1">
+                    <span>🎙️</span>
+                    <span>사회자에게 다시 말해줄 것을 요청</span>
+                </button>
+            </div>
+
+            <!-- Chat Message Box -->
+            <div id="chat-box" class="chat-scroll flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50 min-h-[380px]"></div>
+
+            <!-- Interactive Control Footer Area -->
+            <div class="bg-white border-t border-slate-200 p-3 md:p-4 space-y-3">
+                
+                <!-- Judge Scale Selection Area (Hidden by default, shown for Judge turn rating) -->
+                <div id="judge-scale-area" class="hidden bg-slate-50 p-4 rounded-2xl border-2 border-indigo-200 space-y-3">
+                    <div class="text-center font-bold text-indigo-950 text-sm md:text-base">
+                        📊 설득력 평가 (1점 ~ 5점)
+                    </div>
+                    
+                    <div class="flex items-center justify-between gap-2 max-w-lg mx-auto">
+                        <span class="text-xs font-bold text-rose-600 shrink-0">1점<br><span class="text-[10px] text-slate-400 font-normal">(부족함)</span></span>
+                        
+                        <div class="flex justify-between items-center w-full px-2 gap-2">
+                            <label class="flex flex-col items-center cursor-pointer group">
+                                <input type="radio" name="judgeScale" value="1" class="w-6 h-6 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-xs font-extrabold text-slate-700 mt-1">1</span>
+                            </label>
+                            <label class="flex flex-col items-center cursor-pointer group">
+                                <input type="radio" name="judgeScale" value="2" class="w-6 h-6 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-xs font-extrabold text-slate-700 mt-1">2</span>
+                            </label>
+                            <label class="flex flex-col items-center cursor-pointer group">
+                                <input type="radio" name="judgeScale" value="3" class="w-6 h-6 text-indigo-600 focus:ring-indigo-500" checked>
+                                <span class="text-xs font-extrabold text-slate-700 mt-1">3</span>
+                            </label>
+                            <label class="flex flex-col items-center cursor-pointer group">
+                                <input type="radio" name="judgeScale" value="4" class="w-6 h-6 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-xs font-extrabold text-slate-700 mt-1">4</span>
+                            </label>
+                            <label class="flex flex-col items-center cursor-pointer group">
+                                <input type="radio" name="judgeScale" value="5" class="w-6 h-6 text-indigo-600 focus:ring-indigo-500">
+                                <span class="text-xs font-extrabold text-slate-700 mt-1">5</span>
+                            </label>
+                        </div>
+
+                        <span class="text-xs font-bold text-emerald-600 shrink-0">5점<br><span class="text-[10px] text-slate-400 font-normal">(뛰어남)</span></span>
+                    </div>
+
+                    <button onclick="submitJudgeScale()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2.5 rounded-xl shadow transition text-sm">
+                        평가 점수 제출하기
+                    </button>
+                </div>
+
+                <!-- Text Chat Input Box Area -->
+                <div id="chat-input-area" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="이곳에 나만의 의견이나 근거를 입력해 보세요." onkeypress="if(event.key==='Enter') sendChatInput()" class="flex-1 bg-slate-100 border border-slate-300 rounded-2xl px-4 py-3 font-medium focus:ring-2 focus:ring-indigo-500 focus:bg-white focus:outline-none text-sm md:text-base">
+                    <button onclick="sendChatInput()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-5 py-3 rounded-2xl shadow-md transition text-sm shrink-0">
+                        전송
+                    </button>
+                </div>
+
+                <!-- Early Finish Button -->
+                <button id="btn-finish" onclick="endDebate(false)" class="w-full bg-amber-500 hover:bg-amber-600 text-white font-extrabold py-2.5 rounded-2xl shadow-md transition text-sm hidden">
+                    이제 충분합니다 (토론 마치기)
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 4: RESULTS & SUMMARY -->
+        <div id="screen-result" class="screen hidden p-6 md:p-8 flex-1 flex flex-col justify-between bg-white">
+            <div class="space-y-6" id="result-capture-area">
+                <div class="text-center space-y-1">
+                    <span class="text-4xl">🏆</span>
+                    <h1 class="text-3xl font-black text-slate-900">토론 결과 보고서</h1>
+                    <p class="text-xs text-slate-500">오늘 펼친 나의 훌륭한 논리를 한눈에 살펴보고 저장해 보세요!</p>
+                </div>
+
+                <div id="result-summary-card" class="bg-slate-50 border-2 border-indigo-100 rounded-3xl p-5 md:p-6 space-y-4"></div>
+            </div>
+
+            <div class="space-y-3 mt-6">
+                <button onclick="saveScreenshot()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-3.5 rounded-2xl shadow-lg shadow-emerald-100 text-base transition flex items-center justify-center gap-2">
+                    <span>📸</span>
+                    <span>결과 화면 사진 저장</span>
+                </button>
+
+                <!-- Hall of Fame Table (Result Screen) -->
+                <div id="result-hof" class="border-t border-slate-200 pt-6"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        /* GLOBAL APPLICATION STATE */
+        const state = {
+            school: '',
+            classNum: '',
+            studentNum: '',
+            name: '',
+            rawTopic: '',
+            cleanTopic: '',
+            stance: '', // 찬성, 반대, 판정단
+            role: '',   // 토론 보조자, 토론 상대방, 판정단
+            level: '현재 수준의 단어와 문장',
+            score: 0,
+            turn: 0,
+            timer: 300,
+            timerInterval: null,
+            levelChangedThisTurn: false,
+            history: [],
+            arguments: [],
+            displayed80: false,
+            displayed90: false,
+            currentJudgeLevel: 3, // AI sample rating level (1~5)
+            currentJudgeSpeaker: '찬성' // Alternates between 찬성 and 반대
+        };
+
+        /* 4TH GRADE RECOMMENDED TOPICS POOL (Selects 2 randomly per visit) */
+        const TOPIC_POOL = [
+            { title: '📸 SNS 사진 게시', topic: '부모님이라도 자녀의 사진을 SNS에 마음대로 올리면 안 된다.' },
+            { title: '📱 스마트폰 시간 제한', topic: '스마트폰 사용 시간을 법으로 제한해야 한다.' },
+            { title: '🍱 급식 잔반 없는 날', topic: '급식 잔반 없는 날은 필요하다.' },
+            { title: '💰 정기 용돈 지급', topic: '초등학생 용돈은 정기적으로 주어야 한다.' },
+            { title: '🦁 동물원 폐지', topic: '동물원은 폐지되어야 한다.' },
+            { title: '🎒 초등학교 시험 부활', topic: '초등학교 시험을 다시 부활시켜야 한다.' },
+            { title: '💬 착한 거짓말', topic: '착한 거짓말은 필요하다.' },
+            { title: '🏛️ 문화유산 개방', topic: '문화유산은 모두에게 자유롭게 개방해야 한다.' },
+            { title: '🚲 타슈/자전거 헬멧', topic: '자전거 탑승 시 헬멧 착용을 의무화해야 한다.' }
+        ];
+
+        function renderRecommendedTopics() {
+            const container = document.getElementById('recommended-topics-container');
+            if (!container) return;
+            
+            // Pick 2 random topics from pool
+            const shuffled = [...TOPIC_POOL].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 2);
+            
+            let html = '';
+            selected.forEach(t => {
+                html += `<button type="button" onclick="setTopic('${t.topic.replace(/'/g, "\\'")}')" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-2.5 py-1 rounded-lg border border-indigo-200 transition">${t.title}</button>`;
+            });
+            container.innerHTML = html;
+        }
+
+        /* INITIALIZATION */
+        window.onload = function() {
+            renderHallOfFame();
+            renderRecommendedTopics();
+        };
+
+        /* TOPIC HELPER FUNCTIONS */
+        function setTopic(val) {
+            document.getElementById('topicInput').value = val;
+        }
+
+        function extractCleanTopic(topicStr) {
+            if (!topicStr) return '';
+            let t = topicStr.trim();
+            if (t.endsWith('.')) t = t.slice(0, -1);
+            return t;
+        }
+
+        function extractTopicKeyword(cleanTopicStr) {
+            if (!cleanTopicStr) return '토론';
+            const words = cleanTopicStr.split(' ').filter(w => w.length >= 2);
+            if (words.length === 0) return '토론';
+            // Return first major word stripped of common Korean endings
+            return words[0].replace(/(은|는|이|가|을|를|에|의)$/g, '');
+        }
+
+        /* MODAL & OVERLAY HANDLERS */
+        function showCustomModal(title, contentHtml, icon = "💬") {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-body').innerHTML = contentHtml;
+            document.getElementById('modal-icon').innerText = icon;
+            document.getElementById('custom-modal').classList.remove('hidden');
+        }
+
+        function closeCustomModal() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        function showSplash(text, emoji = "⭐") {
+            const overlay = document.getElementById('splash-overlay');
+            document.getElementById('splash-text').innerText = text;
+            document.getElementById('splash-emoji').innerText = emoji;
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+            }, 1800);
+        }
+
+        /* NAVIGATION & SCREEN ROUTING */
+        function goHome() {
+            const confirmHtml = `
+                <div class="space-y-4">
+                    <p class="text-slate-700 text-sm md:text-base font-medium">
+                        지금 현재 상황은 저장되지 않습니다.<br>그래도 처음으로 돌아가시겠습니까?
+                    </p>
+                    <div class="flex gap-3">
+                        <button onclick="closeCustomModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 rounded-xl transition text-sm">
+                            아니오
+                        </button>
+                        <button onclick="confirmGoHome()" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl transition text-sm">
+                            네, 돌아갑니다
+                        </button>
+                    </div>
+                </div>
+            `;
+            showCustomModal("❓ 돌아가기 확인", confirmHtml, "🏠");
+        }
+
+        function confirmGoHome() {
+            closeCustomModal();
+            stopTimer();
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('screen-login').classList.remove('hidden');
+            renderHallOfFame();
+            renderRecommendedTopics(); // Refresh 2 random topics every time returning home
+        }
+
+        function goToSetup() {
+            state.school = document.getElementById('schoolName').value;
+            state.classNum = document.getElementById('classNum').value;
+            state.studentNum = document.getElementById('studentNum').value;
+            state.name = document.getElementById('studentName').value;
+            state.rawTopic = document.getElementById('topicInput').value;
+            state.cleanTopic = extractCleanTopic(state.rawTopic);
+
+            if (!state.school) { showCustomModal("경고", "학교를 선택해 주세요!", "🏫"); return; }
+            if (!state.classNum || parseInt(state.classNum) < 1) { showCustomModal("경고", "올바른 반을 입력해 주세요!", "🔢"); return; }
+            if (!state.studentNum || parseInt(state.studentNum) < 1) { showCustomModal("경고", "올바른 번호를 입력해 주세요!", "🔢"); return; }
+            if (!state.name.trim()) { showCustomModal("경고", "이름을 입력해 주세요!", "👤"); return; }
+            if (!state.cleanTopic) { showCustomModal("경고", "토론 주제를 입력해 주세요!", "📌"); return; }
+
+            // Display previous settings if available
+            const prevStance = localStorage.getItem('prev_stance');
+            const prevRole = localStorage.getItem('prev_role');
+            if (prevStance) {
+                document.getElementById('prev-setting-info').innerText = `당신의 이전 설정: [${prevStance}${prevRole ? ' - ' + prevRole : ''}]`;
+            } else {
+                document.getElementById('prev-setting-info').innerText = '';
+            }
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('screen-setup').classList.remove('hidden');
+        }
+
+        function selectStance(stance) {
+            state.stance = stance;
+            document.querySelectorAll('.stance-btn').forEach(b => {
+                b.classList.remove('border-amber-400', 'border-cyan-400', 'border-pink-400', 'shadow-md');
+            });
+
+            const roleSection = document.getElementById('role-section');
+
+            if (stance === '찬성') {
+                document.getElementById('btn-pro').classList.add('border-amber-400', 'shadow-md');
+                roleSection.classList.remove('opacity-40', 'pointer-events-none');
+            } else if (stance === '반대') {
+                document.getElementById('btn-con').classList.add('border-cyan-400', 'shadow-md');
+                roleSection.classList.remove('opacity-40', 'pointer-events-none');
+            } else if (stance === '판정단') {
+                document.getElementById('btn-judge').classList.add('border-pink-400', 'shadow-md');
+                roleSection.classList.add('opacity-40', 'pointer-events-none');
+                state.role = '판정단';
+            }
+        }
+
+        function selectRole(role) {
+            state.role = role;
+            document.querySelectorAll('.role-btn').forEach(b => {
+                b.classList.remove('border-indigo-600', 'bg-indigo-100', 'shadow-md', 'ring-2', 'ring-indigo-500');
+            });
+
+            if (role === '토론 보조자') {
+                document.getElementById('btn-assistant').classList.add('border-indigo-600', 'bg-indigo-100', 'shadow-md', 'ring-2', 'ring-indigo-500');
+            } else if (role === '토론 상대방') {
+                document.getElementById('btn-opponent').classList.add('border-indigo-600', 'bg-indigo-100', 'shadow-md', 'ring-2', 'ring-indigo-500');
+            }
+        }
+
+        async function fetchGeminiContent(promptText, systemInstructionText = "") {
+            const apiKey = ""; // API key supplied dynamically by runtime environment
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: promptText }] }],
+                systemInstruction: { parts: [{ text: systemInstructionText || "너는 초등학교 4학년 토론 수업의 명쾌하고 따뜻한 도우미야." }] }
+            };
+
+            // Implementation of Exponential Backoff for API Fetch
+            let delay = 1000;
+            for (let i = 0; i < 3; i++) {
+                try {
+                    const res = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        const data = await res.json();
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (text) return text.trim();
+                    }
+                } catch (err) {
+                    // Retry silently
+                }
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+            return null; // Fallback will be used if API fails
+        }
+
+        function startDebate() {
+            if (!state.stance) { showCustomModal("안내", "토론 입장을 선택해 주세요!", "⚠️"); return; }
+            if (state.stance !== '판정단' && !state.role) { showCustomModal("안내", "AI 파트너 역할을 선택해 주세요!", "⚠️"); return; }
+
+            // Save previous settings
+            localStorage.setItem('prev_stance', state.stance);
+            if (state.stance !== '판정단') localStorage.setItem('prev_role', state.role);
+
+            // Reset debate state
+            state.score = 0;
+            state.turn = 0;
+            state.history = [];
+            state.arguments = [];
+            state.displayed80 = false;
+            state.displayed90 = false;
+            state.levelChangedThisTurn = false;
+            state.currentJudgeSpeaker = '찬성';
+
+            document.getElementById('chat-box').innerHTML = '';
+            document.getElementById('score-display').innerText = '현재 논리 점수: 0점';
+            document.getElementById('chat-topic-display').innerText = state.cleanTopic;
+            document.getElementById('btn-finish').classList.add('hidden');
+
+            // Set Badges
+            const stanceBadge = document.getElementById('badge-my-stance');
+            stanceBadge.innerText = `나: ${state.stance}`;
+            if (state.stance === '찬성') stanceBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-blue-600 text-white shadow-sm";
+            else if (state.stance === '반대') stanceBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-rose-600 text-white shadow-sm";
+            else stanceBadge.className = "text-xs font-extrabold px-3 py-1 rounded-full bg-emerald-600 text-white shadow-sm";
+
+            const aiBadge = document.getElementById('badge-ai-role');
+            if (state.stance === '판정단') {
+                aiBadge.innerText = "AI: 예시 토론자";
+            } else {
+                aiBadge.innerText = `AI: ${state.role}`;
+            }
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('screen-chat').classList.remove('hidden');
+
+            startTimer();
+            initiateFirstTurn();
+        }
+
+        function appendChatMessage(senderType, nameLabel, contentHtml) {
+            const chatBox = document.getElementById('chat-box');
+            const wrapper = document.createElement('div');
+            wrapper.className = "flex flex-col space-y-1 my-2";
+
+            let bubbleStyle = "";
+            let alignClass = "";
+
+            if (senderType === 'user') {
+                alignClass = "items-end";
+                bubbleStyle = "bg-amber-100 text-amber-950 border border-amber-300 rounded-2xl rounded-tr-none p-3.5 max-w-[85%] text-sm md:text-base shadow-sm";
+            } else if (senderType === 'moderator') {
+                alignClass = "items-center text-center my-3";
+                bubbleStyle = "bg-slate-700 text-amber-200 border border-slate-600 rounded-2xl p-3 max-w-[90%] text-xs md:text-sm shadow-md";
+            } else if (senderType === 'pro') {
+                alignClass = "items-start";
+                bubbleStyle = "bg-blue-50 text-blue-950 border-2 border-blue-200 rounded-2xl rounded-tl-none p-3.5 max-w-[85%] text-sm md:text-base shadow-sm";
+            } else if (senderType === 'con') {
+                alignClass = "items-start";
+                bubbleStyle = "bg-rose-50 text-rose-950 border-2 border-rose-200 rounded-2xl rounded-tl-none p-3.5 max-w-[85%] text-sm md:text-base shadow-sm";
+            } else { // Unified Assistant/Moderator: Charcoal Theme
+                alignClass = "items-start";
+                bubbleStyle = "bg-slate-700 text-slate-100 border border-slate-600 rounded-2xl rounded-tl-none p-3.5 max-w-[85%] text-sm md:text-base shadow-sm";
+            }
+
+            wrapper.classList.add(...alignClass.split(' '));
+            wrapper.innerHTML = `
+                <span class="text-xs font-bold text-slate-500 px-1">${nameLabel}</span>
+                <div class="${bubbleStyle}">${contentHtml}</div>
+            `;
+
+            chatBox.appendChild(wrapper);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (senderType !== 'moderator') {
+                state.history.push({
+                    sender: nameLabel,
+                    text: contentHtml.replace(/<[^>]*>?/gm, '')
+                });
+            }
+        }
+
+        async function initiateFirstTurn() {
+            state.turn = 1;
+            const keyword = extractTopicKeyword(state.cleanTopic);
+
+            if (state.stance === '판정단') {
+                // Judge mode initiation
+                document.getElementById('judge-scale-area').classList.remove('hidden');
+                document.getElementById('chat-input-area').classList.add('hidden');
+
+                appendChatMessage('moderator', '🎙️ 토론도우미(사회자)', `판정단 <b>${state.name}</b>님, 환영합니다!<br>'<b>${state.cleanTopic}</b>' 주제에 관해 [찬성] 측 토론자의 의견부터 들어보고 설득력을 평가해 주세요.`);
+                
+                await showJudgeTurnOpinion('찬성');
+            } else {
+                // Pro or Con Student mode initiation
+                document.getElementById('judge-scale-area').classList.add('hidden');
+                document.getElementById('chat-input-area').classList.remove('hidden');
+
+                const welcomeMsg = `안녕하세요 <b>${state.name}</b> 토론자님! '<b>${state.cleanTopic}</b>' 주제에 대한 <b>[${state.stance}]</b> 입장을 선택하셨습니다. 첫 번째 근거를 아래 3가지 보기 중 하나 골라 시작해 보세요!`;
+                appendChatMessage('moderator', '🎙️ 토론도우미(사회자)', welcomeMsg);
+
+                // Offer 3 dynamic choices for first turn
+                await presentThreeInitialChoices();
+            }
+        }
+
+        async function presentThreeInitialChoices() {
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            const prompt = `'${state.cleanTopic}'라는 토론 주제에 대해 초등학교 4학년 [${state.stance}] 입장에서 사용할 수 있는 서로 다른 구체적이고 설득력 있는 근거 3가지를 써줘. 단순한 상투적 문장이 아니라 '${state.cleanTopic}' 주제의 핵심 내용과 일상 예시가 구체적으로 담긴 이유를 각각 1문장씩 작성해줘.`;
+            const sys = "응답 형식은 반드시 1. 근거1\n2. 근거2\n3. 근거3 줄바꿈 형태로만 작성해. 상투적이거나 정형화된 문구는 제외해.";
+
+            let res = await fetchGeminiContent(prompt, sys);
+            
+            let choices = [];
+            if (res) {
+                choices = res.split('\n')
+                    .map(line => line.replace(/^[0-9]+[\.\)]\s*/, '').trim())
+                    .filter(line => line.length > 5)
+                    .slice(0, 3);
+            }
+            
+            if (choices.length < 3) {
+                choices = generateFallbackInitialChoices(state.cleanTopic, state.stance);
+            }
+
+            let html = `<div class="space-y-2 text-left my-2">`;
+            choices.forEach((c, idx) => {
+                const textOnly = c.replace(/^[0-9]\.\s*/, '');
+                html += `
+                    <button onclick="selectInitialChoice('${textOnly.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')" class="w-full text-left p-3 border-2 border-indigo-200 hover:border-indigo-500 rounded-2xl bg-indigo-50/80 hover:bg-indigo-100 transition text-xs md:text-sm font-bold text-indigo-950 shadow-sm">
+                        ${idx + 1}️⃣ ${textOnly}
+                    </button>
+                `;
+            });
+            html += `</div>`;
+
+            appendChatMessage('ai', '🤖 토론도우미', `💡 <b>[주제 맞춤 시작 근거 3가지 선택지]</b><br>인공지능이 '${state.cleanTopic}' 주제에 맞게 제안하는 시작 근거입니다. 하나를 고르면 토론이 시작됩니다!<br>${html}`);
+        }
+
+        function generateFallbackInitialChoices(topic, stance) {
+            const keyword = extractTopicKeyword(topic);
+            if (stance === '찬성') {
+                return [
+                    `1. ${topic}을(를) 인정하고 실천하면 우리 일상생활에서 억울하거나 불편한 일이 크게 줄어들기 때문입니다.`,
+                    `2. ${topic}에 대해 찬성할 경우 친구들과 사람들 사이의 신뢰와 약속의 가치가 훨씬 더 높아지기 때문입니다.`,
+                    `3. ${keyword} 관련 뉴스나 사례에서도 보듯이 이 주제를 긍정적으로 다루는 것이 사회 전체에 유익하기 때문입니다.`
+                ];
+            } else {
+                return [
+                    `1. ${topic}을(를) 허용하거나 늘리게 되면 예기치 못한 피해나 새로운 문제가 또 다시 발생할 수 있기 때문입니다.`,
+                    `2. ${topic}에 반대하는 이유는 사람들의 자유나 권리를 침해하거나 갈등을 오히려 더 키울 수 있기 때문입니다.`,
+                    `3. ${keyword} 사안에 대해 무작정 수용하기보다는 기준을 엄격히 세워 신중하게 대처해야 하기 때문입니다.`
+                ];
+            }
+        }
+
+        function selectInitialChoice(choiceText) {
+            // First choice does not award direct points, gives guide hint instead
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            appendChatMessage('user', `나 (${state.name})`, choiceText);
+            state.arguments.push(choiceText);
+
+            showCustomModal(
+                "💡 좋은 출발입니다!",
+                `<b>[${state.stance}]</b> 입장의 첫 번째 근거를 훌륭하게 선택하셨습니다!<br><br>중간에 <b>'뉴스 기사'</b>나 <b>'공공기관 통계'</b> 자료를 함께 언급하면 훨씬 더 완성도 높은 논리가 작성됩니다. (+0점 출발, 완주 시 +20점)`,
+                "🚀"
+            );
+
+            setTimeout(() => {
+                generateAIReplyToStudent(choiceText);
+            }, 800);
+
+            advanceTurnCycle();
+        }
+
+        async function handleProConStudentInput(userText) {
+            const userType = state.stance === '찬성' ? 'pro' : 'con';
+            appendChatMessage('user', `나 (${state.name})`, userText);
+            state.arguments.push(userText);
+
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            let earnedPoints = 10;
+            let reasonText = "주제와 상황에 어울리는 알맞은 의견을 솔직하게 잘 표현해 주셨습니다! (+10점)";
+
+            const hasReasoningConnector = userText.includes('왜냐하면') || userText.includes('때문') || userText.includes('예를 들어') || userText.includes('생각합니다') || userText.includes('이유는') || userText.includes('근거');
+            const hasTopicRelevance = userText.includes(keyword) || userText.length >= 15;
+
+            if (hasReasoningConnector && hasTopicRelevance) {
+                earnedPoints = 20;
+                reasonText = `주제 핵심 내용에 타당한 이유와 까닭까지 매끄럽게 어우러진 완벽한 설득력 논리입니다! (+20점)`;
+            } else if (hasReasoningConnector || hasTopicRelevance) {
+                earnedPoints = 15;
+                reasonText = `입장에 알맞은 표현과 설득력 있는 논리로 주장을 전달해 주셨습니다! (+15점)`;
+            }
+
+            updateScore(earnedPoints, reasonText);
+
+            setTimeout(() => {
+                generateAIReplyToStudent(userText);
+            }, 1000);
+
+            advanceTurnCycle();
+        }
+
+        async function generateAIReplyToStudent(userText) {
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            
+            // Check if AI role is Debate Opponent
+            if (state.role && state.role.includes('상대방')) {
+                // Opponent Role: Formal and polite debate tone with strict rebuttal (존댓말 반론)
+                const oppStance = state.stance === '찬성' ? '반대' : '찬성';
+                const prompt = `'${state.cleanTopic}' 토론에서 [${state.stance}] 학생(${state.name})이 "${userText}"라고 주장했습니다. 당신은 [${oppStance}] 입장의 초등학교 4학년 토론 상대방입니다. 상대방의 의견을 정중히 들었음을 표현한 뒤([${state.name}] 님의 의견 잘 들었습니다), [${oppStance}] 입장에서 상대 주장을 논리적으로 반박하는 반론을 초등학교 4학년 수준의 정중한 높임말(존댓말)로 3~4줄 이내로 말해 주세요. 절대로 칭찬, 격려, 팁, 뉴스 검색 조언을 하지 말고 오직 [${oppStance}] 토론 상대방으로서 매끄러운 반론만 펼쳐야 합니다.`;
+                const sys = `너는 초등학교 4학년 공식 토론회의 [${oppStance}] 측 상대방 토론자이다. 칭찬, 응원, 도움말, 검색 팁은 절대로 말하지 마라. 오직 상대방의 주장에 대해 정중한 존댓말(높임말)로 [${oppStance}] 입장의 반론만 3~4줄 이내로 말해라. 수준: ${state.level}.`;
+
+                let reply = await fetchGeminiContent(prompt, sys);
+                if (!reply) {
+                    if (oppStance === '찬성') {
+                        reply = `${state.name} 님의 의견 잘 들었습니다. 어느 정도 일리 있는 말씀입니다. 하지만 '${keyword}' 사안에 대해 찬성하는 입장에서 바라보면, 이 문제를 통해 얻을 수 있는 사회적 유익과 긍정적인 변화가 훨씬 더 크다고 생각합니다.`;
+                    } else {
+                        reply = `${state.name} 님의 의견 잘 들었습니다. 어느 정도 일리 있는 말씀입니다. 하지만 '${keyword}' 사안에 대해 반대하는 입장에서 바라보면, 이로 인해 발생할 수 있는 새로운 피해와 문제점이 더 크므로 신중해야 한다고 생각합니다.`;
+                    }
+                }
+
+                const senderType = oppStance === '찬성' ? 'pro' : 'con';
+                appendChatMessage(senderType, `⚔️ [토론 상대방 - ${oppStance}]`, reply);
+            } else {
+                // Assistant Role: Praise, offer expansion advice and news search tip
+                const prompt = `'${state.cleanTopic}' 토론 중 [${state.stance}] 학생이 "${userText}"라고 주장했어. 너는 [${state.stance}] 입장의 토론 보조자야. 칭찬해 주고, 근거를 보충할 수 있는 다정한 도움말을 3줄 이내로 말해줘.`;
+                const sys = `너는 초등학교 4학년 토론 보조자야. 친절하고 힘을 북돋아 줘.`;
+
+                let reply = await fetchGeminiContent(prompt, sys);
+                if (!reply) {
+                    reply = `좋은 근거입니다! '${keyword}' 관련 뉴스 기사나 공공기관 통계 자료를 함께 인용하면 상대방을 설득하기 훨씬 좋아집니다.`;
+                }
+
+                appendChatMessage('ai', `🤝 [토론 보조자 - ${state.stance}]`, `${reply}<br><br>💡 <b>도움 팁:</b> 관련 키워드로 인터넷 뉴스를 찾아 자료로 활용해 보세요!`);
+            }
+        }
+
+        async function showJudgeTurnOpinion(speakerStance) {
+            state.currentJudgeSpeaker = speakerStance;
+            // Randomly select level 1~5 for AI argument
+            state.currentJudgeLevel = Math.floor(Math.random() * 5) + 1;
+
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            const levelDesc = [
+                "1점 수준(감정적 떼쓰기, 인신공격, 말도 안 되는 반발)",
+                "2점 수준(논리적 비약과 엉뚱한 오해)",
+                "3점 수준(이유가 다소 단순하거나 남들의 말만 따라 한 근거)",
+                "4점 수준(알맞은 이유와 들어줄 만한 근거)",
+                "5점 수준(구체적 자료와 타당한 논리가 갖춰진 완벽한 문장)"
+            ][state.currentJudgeLevel - 1];
+
+            const prompt = `'${state.cleanTopic}' 토론에서 [${speakerStance}] 측 초등학생이 말할 예시 근거를 2문장 이내로 작성해줘. 수준은 반드시 [${levelDesc}]으로 작성해줘.`;
+            const sys = `너는 초등학교 4학년 토론 참가자야. [${speakerStance}] 입장으로 지정된 수준에 딱 맞춰서 말해줘.`;
+
+            let argText = await fetchGeminiContent(prompt, sys);
+            if (!argText) {
+                if (state.currentJudgeLevel <= 2) {
+                    argText = `저는 '${keyword}'에 관해 그냥 기분이 안 좋고 짜증이 나기 때문에 무조건 반대하고 싶습니다!`;
+                } else if (state.currentJudgeLevel === 3) {
+                    argText = `주변 친구들도 다들 '${keyword}'에 대해 이렇게 말하니까 저도 그렇다고 생각합니다.`;
+                } else {
+                    argText = `'${keyword}' 사안은 우리 일상생활에서 많은 영향과 변화를 주기 때문에 올바른 기준을 정하고 진행해야 합니다.`;
+                }
+            }
+
+            const senderType = speakerStance === '찬성' ? 'pro' : 'con';
+            appendChatMessage(senderType, `💬 [${speakerStance} 측 학생 예시 발언]`, `"${argText}"`);
+
+            // Reset judge scale selection
+            document.querySelectorAll('input[name="judgeScale"]').forEach(r => r.checked = false);
+            document.querySelector('input[name="judgeScale"][value="3"]').checked = true;
+        }
+
+        async function submitJudgeScale() {
+            stopTimer(); // Pause timer during rating choice
+            const selectedScale = parseInt(document.querySelector('input[name="judgeScale"]:checked').value);
+            
+            // Calculate bonus based on difference with AI intended level
+            const diff = Math.abs(selectedScale - state.currentJudgeLevel);
+            let bonusPoints = 1;
+            if (diff === 0) bonusPoints = 5;
+            else if (diff === 1) bonusPoints = 3;
+
+            updateScore(bonusPoints, `AI 기준 수준과의 정확도 판정 결과 보너스 (+${bonusPoints}점)!`);
+
+            if (state.turn === 1) {
+                // First turn: Present 3 choices for judging reason
+                await presentJudgeReasonChoices(selectedScale);
+            } else {
+                // Subsequent turns: User types reason directly in chat
+                document.getElementById('judge-scale-area').classList.add('hidden');
+                document.getElementById('chat-input-area').classList.remove('hidden');
+                
+                appendChatMessage('moderator', '🎙️ 토론도우미(사회자)', `<b>${selectedScale}점</b>으로 평가하셨습니다! 왜 그렇게 판정하셨는지 아래 입력창에 이유를 적어주세요.`);
+            }
+        }
+
+        async function presentJudgeReasonChoices(selectedScale) {
+            document.getElementById('judge-scale-area').classList.add('hidden');
+
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            const prompt = `'${state.cleanTopic}' 토론에서 [${state.currentJudgeSpeaker}] 측 학생의 의견을 듣고 판정단이 ${selectedScale}점을 부여한 이유 3가지를 작성해줘. 상투적인 표현을 지양하고, '${state.cleanTopic}' 주제 및 학생 발언 내용과 직접 관련된 구체적인 판단 이유를 초등학생 눈높이(상·중·하)로 각각 1문장씩 써줘.`;
+            const sys = "응답 형식은 반드시 1. 이유1\n2. 이유2\n3. 이유3 줄바꿈 형태로만 3개 작성해.";
+
+            let res = await fetchGeminiContent(prompt, sys);
+            let choices = [];
+            if (res) {
+                choices = res.split('\n')
+                    .map(l => l.replace(/^[0-9]+[\.\)]\s*/, '').trim())
+                    .filter(l => l.length > 5)
+                    .slice(0, 3);
+            }
+
+            if (choices.length < 3) {
+                choices = generateFallbackJudgeChoices(state.cleanTopic, state.currentJudgeSpeaker, selectedScale);
+            }
+
+            let html = `<div class="space-y-2 text-left my-2">`;
+            choices.forEach((c, idx) => {
+                const textOnly = c.replace(/^[0-9]\.\s*/, '');
+                html += `
+                    <button onclick="selectJudgeReasonChoice('${textOnly.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')" class="w-full text-left p-3 border-2 border-emerald-200 hover:border-emerald-500 rounded-2xl bg-emerald-50/80 hover:bg-emerald-100 transition text-xs md:text-sm font-bold text-emerald-950 shadow-sm">
+                        ${idx + 1}️⃣ ${textOnly}
+                    </button>
+                `;
+            });
+            html += `</div>`;
+
+            appendChatMessage('moderator', '🎙️ 토론도우미(사회자)', `<b>[첫 번째 판정 이유 3가지 선택지]</b><br>선택하신 점수(${selectedScale}점)에 어울리는 주제 맞춤형 이유 중 하나를 골라보세요.<br>${html}`);
+        }
+
+        function generateFallbackJudgeChoices(topic, speaker, scale) {
+            const keyword = extractTopicKeyword(topic);
+            return [
+                `1. '${topic}' 주제에 맞는 분명한 주장과 구체적인 까닭이 매끄럽게 연결되어 ${scale}점을 주었습니다.`,
+                `2. '${topic}'에 대한 기본 생각은 알 수 있지만, 상대방을 완전하게 설득하기에는 근거 자료가 부족하여 ${scale}점을 주었습니다.`,
+                `3. '${keyword}' 관련 이유가 논리적이기보다 감정적이거나 다소 비약이 느껴져서 ${scale}점을 주었습니다.`
+            ];
+        }
+
+        function selectJudgeReasonChoice(reasonText) {
+            appendChatMessage('user', `나 (${state.name})`, reasonText);
+            
+            showCustomModal(
+                "💡 첫 번째 판정 완료!",
+                "첫 번째 판정 이유를 훌륭하게 고르셨습니다!<br>두 번째 판정부터는 직접 이유를 입력하게 됩니다. (+0점 출발, 완주 시 +20점)",
+                "⚖️"
+            );
+
+            processJudgeTurnFeedbackAndNext(state.currentJudgeLevel);
+        }
+
+        function handleJudgeUserReasoningInput(text) {
+            appendChatMessage('user', `나 (${state.name})`, text);
+
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            let earnedPoints = 10;
+            let feedbackMsg = `판정 이유를 따뜻하고 명확하게 잘 표현해 주셨습니다! (+10점)`;
+
+            const hasReasoningConnector = text.includes('이유') || text.includes('때문') || text.includes('생각') || text.includes('설득') || text.includes('부족') || text.includes('좋');
+            const hasRelevance = text.includes(keyword) || text.length >= 12;
+
+            if (hasReasoningConnector && hasRelevance) {
+                earnedPoints = 20;
+                feedbackMsg = `문맥과 상황을 정확하게 파악하여 4학년 학생이 듣기에 매우 공감되고 설득력 높은 판정입니다! (+20점)`;
+            } else if (hasReasoningConnector || hasRelevance) {
+                earnedPoints = 15;
+                feedbackMsg = `찬/반 학생의 의견을 잘 읽고 매끄럽고 타당하게 판정 의견을 전달하셨습니다! (+15점)`;
+            }
+
+            updateScore(earnedPoints, feedbackMsg);
+            processJudgeTurnFeedbackAndNext(state.currentJudgeLevel);
+        }
+
+        async function processJudgeTurnFeedbackAndNext(ratingLevel) {
+            // AI student reacts dynamically to judge's feedback
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            let reactionPrompt = "";
+            
+            if (ratingLevel >= 4) {
+                reactionPrompt = `판정단이 내 발언에 높은 점수를 주며 칭찬했어. 4학년 학생 입장에서 신나서 감사하고 더 보충하겠다고 1문장으로 소감을 표현해줘.`;
+            } else {
+                reactionPrompt = `판정단이 내 발언의 부족한 점을 지적했어. 4학년 학생 입장에서 기분 나빠하지 않고 조언을 잘 받아들여 검토하겠다고 1문장으로 솔직하게 답해줘.`;
+            }
+
+            let studentReaction = await fetchGeminiContent(reactionPrompt, "너는 초등학교 4학년 토론 참가자야.");
+            if (!studentReaction) {
+                studentReaction = ratingLevel >= 4 ? 
+                    "좋은 평가와 칭찬 감사드립니다! 앞으로 뉴스 기사도 더 찾아보고 멋진 논리를 펼치겠습니다." :
+                    "지적해 주신 부분을 들어보니 제 근거가 다소 부족했네요. 다시 잘 살펴보고 보완하겠습니다!";
+            }
+
+            const senderType = state.currentJudgeSpeaker === '찬성' ? 'pro' : 'con';
+            appendChatMessage(senderType, `👤 [${state.currentJudgeSpeaker} 측 학생 소감]`, `"${studentReaction}"`);
+
+            advanceTurnCycle();
+
+            if (state.turn <= 5) {
+                // Switch speaker stance for next turn
+                const nextSpeaker = state.currentJudgeSpeaker === '찬성' ? '반대' : '찬성';
+                
+                setTimeout(async () => {
+                    document.getElementById('judge-scale-area').classList.remove('hidden');
+                    document.getElementById('chat-input-area').classList.add('hidden');
+                    
+                    appendChatMessage('moderator', '🎙️ 토론도우미(사회자)', `그럼 이제 <b>[${nextSpeaker}]</b> 측 학생의 의견을 들어보고 설득력을 평가해 주세요.`);
+                    await showJudgeTurnOpinion(nextSpeaker);
+                    startTimer();
+                }, 1200);
+            }
+        }
+
+        function openLevelChangeMenu() {
+            if (state.levelChangedThisTurn) {
+                showCustomModal("요청 제한 안내", "대화 1회당 사회자에게 다시 말해달라는 요청은 1회만 가능합니다!", "⏳");
+                return;
+            }
+
+            const options = [
+                { name: '더 쉬운 단어와 짧은 문장', desc: '직전 발언을 저학년도 이해하기 쉽고 간단하게 다시 설명' },
+                { name: '현재 수준의 단어와 문장', desc: '직전 발언을 4학년 표준 눈높이에 맞게 핵심만 다시 정리' },
+                { name: '더 어려운 단어와 긴 문장', desc: '직전 발언을 다양한 표현과 어휘를 사용하여 풍부하게 다시 정리' }
+            ];
+
+            let html = `<div class="space-y-2 text-left my-2">`;
+            options.forEach(opt => {
+                html += `
+                    <button onclick="confirmLevelChange('${opt.name}')" class="w-full text-left p-3 border-2 border-indigo-200 hover:border-indigo-500 rounded-2xl bg-indigo-50 hover:bg-indigo-100 transition">
+                        <div class="font-extrabold text-sm text-indigo-950">${opt.name}</div>
+                        <div class="text-xs text-slate-500 mt-0.5">${opt.desc}</div>
+                    </button>
+                `;
+            });
+            html += `</div>`;
+
+            showCustomModal("🎙️ 사회자에게 다시 말해줄 것을 요청", html, "🎙️");
+        }
+
+        function confirmLevelChange(newLevel) {
+            closeCustomModal();
+            const confirmHtml = `
+                <div class="space-y-4">
+                    <p class="text-slate-700 text-sm md:text-base font-medium">
+                        대화 1회당 사회자에게 다시 말해달라는 요청은 1회만 가능합니다.<br>
+                        정말 <b>[${newLevel}]</b> 수준으로 다시 말을 요청하시겠습니까?
+                    </p>
+                    <div class="flex gap-3">
+                        <button onclick="closeCustomModal()" class="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2.5 rounded-xl transition text-sm">
+                            아니오
+                        </button>
+                        <button onclick="executeLevelChange('${newLevel}')" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl transition text-sm">
+                            네, 요청합니다
+                        </button>
+                    </div>
+                </div>
+            `;
+            showCustomModal("❓ 다시 말하기 요청 확인", confirmHtml, "🎙️");
+        }
+
+        async function executeLevelChange(newLevel) {
+            closeCustomModal();
+            state.level = newLevel;
+            state.levelChangedThisTurn = true;
+
+            let lastMsg = "직전 발언 내용";
+            if (state.history.length > 0) {
+                lastMsg = state.history[state.history.length - 1].text;
+            }
+
+            appendChatMessage('moderator', '🎙️ 토론도우미(사회자)', `<b>${state.name}</b> 토론자님의 요청으로, 직전 의견을 <b>[${newLevel}]</b> 수준으로 다시 정리해 드리겠습니다.`);
+
+            const keyword = extractTopicKeyword(state.cleanTopic);
+            const prompt = `'${state.cleanTopic}' 토론 중 다음 발언("${lastMsg}")을 초등학생을 위해 [${newLevel}] 수준으로 2문장 이내로 요약/다시 말해줘.`;
+            const sys = "너는 초등학교 토론 교실 사회자야. 직전 발언을 요청받은 수준으로 매끄럽게 정리해서 전달해.";
+
+            let summarized = await fetchGeminiContent(prompt, sys);
+            if (!summarized) {
+                summarized = `'${keyword}' 사안에 관해 핵심을 정리하자면, [${newLevel}] 수준에 맞게 다시 생각해 볼 수 있는 중요한 의견입니다.`;
+            }
+
+            setTimeout(() => {
+                appendChatMessage('moderator', '🎙️ 토론도우미 정리', `💬 <b>[다시 정리된 내용]:</b> "${summarized}"`);
+            }, 600);
+        }
+
+        function startTimer() {
+            stopTimer();
+            state.timer = 300;
+            document.getElementById('timer-display').innerText = `예시 논리 등장까지: ${state.timer}초`;
+
+            state.timerInterval = setInterval(async () => {
+                state.timer--;
+                document.getElementById('timer-display').innerText = `예시 논리 등장까지: ${state.timer}초`;
+
+                // At 100 seconds passed (200s remaining), show mid-debate hint
+                if (state.timer === 200) {
+                    const keyword = extractTopicKeyword(state.cleanTopic);
+                    const prompt = `'${state.cleanTopic}' 토론 중인 [${state.stance}] 학생에게 도움이 될 힌트를 1문장으로 짧게 말해줘.`;
+                    let hint = await fetchGeminiContent(prompt, "너는 친절한 초등학교 토론 사회자야.");
+                    if (!hint) hint = `'${keyword}' 사안이 우리 주변 일상생활에 어떤 영향을 주는지 연관 지어 생각해보세요!`;
+                    
+                    appendChatMessage('moderator', '📢 사회자 (토론 힌트)', `💡 <b>[도움 힌트]:</b> ${hint}`);
+                }
+
+                // Timer expired (300s passed)
+                if (state.timer <= 0) {
+                    stopTimer();
+                    appendChatMessage('moderator', '⏱️ 시간 경과 안내', `제한시간이 지나 토론 작성을 돕기 위한 3가지 예시 선택지를 준비했습니다.`);
+                    await presentThreeInitialChoices();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+        }
+
+        /* CHAT INPUT ROUTER */
+        function sendChatInput() {
+            const inputEl = document.getElementById('chat-input');
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            inputEl.value = '';
+            stopTimer();
+
+            if (state.stance === '판정단') {
+                handleJudgeUserReasoningInput(text);
+            } else {
+                handleProConStudentInput(text);
+            }
+        }
+
+        function advanceTurnCycle() {
+            state.turn++;
+            state.levelChangedThisTurn = false; // Reset per-turn limit
+
+            if (state.turn >= 2) {
+                document.getElementById('btn-finish').classList.remove('hidden');
+            }
+
+            if (state.turn > 5) {
+                endDebate(true);
+            } else if (state.stance !== '판정단') {
+                startTimer();
+            }
+        }
+
+        /* SCORE UPDATER & SPLASH CALLER */
+        function updateScore(pts, reason) {
+            state.score += pts;
+            document.getElementById('score-display').innerText = `현재 논리 점수: ${state.score}점`;
+
+            showCustomModal(`🎉 점수 획득 (+${pts}점)`, reason, "⭐");
+
+            if (state.score >= 90 && !state.displayed90) {
+                showSplash("🎉 환상적인 논리예요! 🎉", "🏆");
+                state.displayed90 = true;
+            } else if (state.score >= 80 && !state.displayed80) {
+                showSplash("⭐ 멋진 논리에요! ⭐", "🌟");
+                state.displayed80 = true;
+            }
+        }
+
+        function endDebate(isFullCompletion = false) {
+            stopTimer();
+
+            if (isFullCompletion) {
+                state.score += 20;
+                showCustomModal("🏆 토론 완주 달성!", "총 5회의 토론 과정을 끝까지 멋지게 완료하셨습니다! 완주 업적 보너스 점수 +20점이 가산되었습니다!", "🎉");
+            }
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById('screen-result').classList.remove('hidden');
+
+            renderResultSummary();
+            saveToBackend();
+            renderHallOfFame();
+        }
+
+        function renderResultSummary() {
+            const container = document.getElementById('result-summary-card');
+            
+            const roleText = state.stance === '판정단' ? '판정단' : `${state.stance} (${state.role})`;
+
+            let html = `
+                <div class="grid grid-cols-2 gap-3 text-xs md:text-sm font-bold border-b border-slate-200 pb-4">
+                    <div>🏫 <span class="text-slate-500">학교:</span> ${state.school}</div>
+                    <div>👤 <span class="text-slate-500">학생:</span> ${state.classNum}반 ${state.studentNum}번 ${state.name}</div>
+                    <div class="col-span-2">📌 <span class="text-slate-500">토론 주제:</span> ${state.cleanTopic}</div>
+                    <div>🎭 <span class="text-slate-500">입장/역할:</span> ${roleText}</div>
+                    <div>💯 <span class="text-slate-500">최종 논리 점수:</span> <span class="text-indigo-600 text-lg font-black">${state.score}점</span></div>
+                </div>
+
+                <div class="space-y-2 pt-2">
+                    <h4 class="font-extrabold text-sm text-slate-900 flex items-center gap-1">
+                        <span>💬</span><span>오늘 나눈 토론 요약 대화 기록</span>
+                    </h4>
+                    <div class="bg-white border border-slate-200 rounded-2xl p-4 max-h-60 overflow-y-auto space-y-2 text-xs md:text-sm">
+            `;
+
+            state.history.forEach(h => {
+                html += `<div class="border-b border-slate-100 pb-1.5"><b class="text-indigo-950">${h.sender}:</b> ${h.text}</div>`;
+            });
+
+            html += `</div></div>`;
+            container.innerHTML = html;
+        }
+
+        function saveScreenshot() {
+            const captureTarget = document.getElementById('result-capture-area');
+            html2canvas(captureTarget, { scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${state.name}_4학년_토론_결과.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        function saveToBackend() {
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, '0')}.${String(now.getDate()).padStart(2, '0')}`;
+            
+            const roleText = state.stance === '판정단' ? '판정단' : `${state.stance} (${state.role})`;
+
+            const record = {
+                date: dateStr,
+                school: state.school,
+                classNum: state.classNum,
+                studentNum: state.studentNum,
+                name: state.name,
+                topic: state.cleanTopic,
+                stanceRole: roleText,
+                score: state.score
+            };
+
+            let db = [];
+            try {
+                db = JSON.parse(localStorage.getItem('debate_hall_of_fame') || '[]');
+            } catch(e) { db = []; }
+
+            db.push(record);
+            db.sort((a, b) => b.score - a.score);
+            db = db.slice(0, 20); // Keep top 20 only
+
+            localStorage.setItem('debate_hall_of_fame', JSON.stringify(db));
+        }
+
+        function renderHallOfFame() {
+            let db = [];
+            try {
+                db = JSON.parse(localStorage.getItem('debate_hall_of_fame') || '[]');
+            } catch(e) { db = []; }
+
+            let tableHtml = `
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-black text-slate-900 text-base md:text-lg flex items-center gap-1.5">
+                            <span>🏆</span>
+                            <span>명예의 전당 (논리 랭킹 Top 20)</span>
+                        </h3>
+                        <span class="text-xs text-slate-400 font-semibold">최고 점수순</span>
+                    </div>
+
+                    <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-sm">
+                        <table class="w-full text-left border-collapse text-xs md:text-sm">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 font-extrabold border-b border-slate-200">
+                                    <th class="p-3 text-center">순위</th>
+                                    <th class="p-3">날짜</th>
+                                    <th class="p-3">학교</th>
+                                    <th class="p-3">반/번호/이름</th>
+                                    <th class="p-3">토론 주제</th>
+                                    <th class="p-3">입장(역할)</th>
+                                    <th class="p-3 text-right">점수</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 font-medium text-slate-700">
+            `;
+
+            if (db.length === 0) {
+                tableHtml += `<tr><td colspan="7" class="p-6 text-center text-slate-400 font-bold">아직 등록된 토론 랭킹이 없습니다. 첫 번째 주인공이 되어 보세요!</td></tr>`;
+            } else {
+                db.forEach((r, idx) => {
+                    const rankBadge = idx === 0 ? '🥇 1위' : (idx === 1 ? '🥈 2위' : (idx === 2 ? '🥉 3위' : `${idx + 1}위`));
+                    tableHtml += `
+                        <tr class="hover:bg-slate-50/80 transition">
+                            <td class="p-3 text-center font-bold text-indigo-950">${rankBadge}</td>
+                            <td class="p-3 text-slate-500">${r.date}</td>
+                            <td class="p-3 font-semibold">${r.school}</td>
+                            <td class="p-3 font-bold text-slate-900">${r.classNum}반 ${r.studentNum}번 ${r.name}</td>
+                            <td class="p-3 truncate max-w-[150px]" title="${r.topic}">${r.topic}</td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-xs">${r.stanceRole}</span></td>
+                            <td class="p-3 text-right font-black text-indigo-600">${r.score}점</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            tableHtml += `</tbody></table></div></div>`;
+
+            document.getElementById('main-hof').innerHTML = tableHtml;
+            document.getElementById('result-hof').innerHTML = tableHtml;
+        }
+    </script>
+</body>
+</html>
